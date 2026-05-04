@@ -2,7 +2,7 @@ import type { RecapEntry, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityLabels, hasContext } from "../types/patient";
 import type { SessionInputs } from "../types/session";
-import { hasAnyInput, formatPace } from "../types/session";
+import { hasAnyInput, formatPace, loadAU, zoneFromAU, zoneLabels } from "../types/session";
 
 export function buildRecap(
   tree: Tree,
@@ -75,6 +75,18 @@ function formatSessionInputsText(inputs: SessionInputs | null | undefined): stri
     if (s.hasMatchSoon !== undefined)
       params.push(`match prévu : ${s.hasMatchSoon ? "oui" : "non"}`);
     if (params.length) lines.push(`• Paramètres : ${params.join(" · ")}`);
+  }
+  const ps = inputs.postSession;
+  if (
+    ps &&
+    ps.srpe !== undefined &&
+    ps.actualDuration !== undefined
+  ) {
+    const au = loadAU(ps.srpe, ps.actualDuration);
+    const zone = zoneLabels[zoneFromAU(au)];
+    lines.push(
+      `• Charge interne (Foster) : ${ps.srpe}/10 × ${ps.actualDuration} min = ${au} UA · ${zone}`,
+    );
   }
   return lines;
 }

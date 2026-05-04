@@ -23,11 +23,13 @@ import {
 import {
   loadHistory,
   appendHistory,
+  updateLatestEntry,
   clearHistory,
   type HistoryEntry,
 } from "./lib/history";
 import type { PatientContext } from "./types/patient";
-import type { SessionInputs } from "./types/session";
+import type { SessionInputs, PostSessionLoad } from "./types/session";
+import { loadAU } from "./types/session";
 
 type TreeState = {
   treeId: string;
@@ -250,6 +252,35 @@ export default function App() {
     setHistoryState([]);
   }, []);
 
+  const handlePostSessionChange = useCallback(
+    (load: PostSessionLoad) => {
+      setState((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sessionInputs: { ...prev.sessionInputs, postSession: load },
+        };
+      });
+      // If we're on a recommendation node, push the sRPE into the recorded history entry
+      if (state && tree && currentNode?.kind === "recommendation") {
+        const computedAU =
+          load.srpe !== undefined && load.actualDuration !== undefined
+            ? loadAU(load.srpe, load.actualDuration)
+            : undefined;
+        const newHistory = updateLatestEntry(
+          { treeId: state.treeId, recommendationId: currentNode.id },
+          {
+            srpe: load.srpe,
+            durationMin: load.actualDuration,
+            loadAU: computedAU,
+          },
+        );
+        setHistoryState(newHistory);
+      }
+    },
+    [state, tree, currentNode],
+  );
+
   const headerTitle =
     mode === "redFlags"
       ? "Drapeaux rouges"
@@ -368,6 +399,7 @@ export default function App() {
               onRestart={handleRestart}
               onHome={handleHome}
               onEditStep={handleEditStep}
+              onPostSessionChange={handlePostSessionChange}
             />
           )}
         </AnimatePresence>

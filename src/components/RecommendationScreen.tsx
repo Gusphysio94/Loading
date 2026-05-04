@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import type { RecapEntry, RecommendationNode, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityShort, hasContext } from "../types/patient";
-import type { SessionInputs } from "../types/session";
-import { hasAnyInput, formatPace } from "../types/session";
+import type { SessionInputs, PostSessionLoad } from "../types/session";
+import { hasAnyInput, formatPace, suggestedDuration } from "../types/session";
+import { SRPECard } from "./SRPECard";
 import { cn } from "../lib/cn";
 import {
   CheckIcon,
@@ -27,6 +28,7 @@ type RecommendationScreenProps = {
   onRestart: () => void;
   onHome: () => void;
   onEditStep?: (index: number) => void;
+  onPostSessionChange?: (load: PostSessionLoad) => void;
 };
 
 const severityConfig = {
@@ -79,6 +81,7 @@ export function RecommendationScreen({
   onRestart,
   onHome,
   onEditStep,
+  onPostSessionChange,
 }: RecommendationScreenProps) {
   const config = severityConfig[node.severity];
   const { Icon } = config;
@@ -182,6 +185,14 @@ export function RecommendationScreen({
           </p>
         </div>
       </div>
+
+      {onPostSessionChange && (
+        <SRPECard
+          value={sessionInputs?.postSession}
+          suggestedDurationMin={suggestedDuration(sessionInputs)}
+          onChange={onPostSessionChange}
+        />
+      )}
 
       {recap.length > 0 && (
         <section className="print-card mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">

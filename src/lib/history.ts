@@ -13,6 +13,12 @@ export type HistoryEntry = {
   recommendationTitle: string;
   severity: Severity;
   evaPeak?: number;
+  /** Foster session-RPE (0-10), captured 15-30 min post-session. */
+  srpe?: number;
+  /** Effective session duration, in minutes. */
+  durationMin?: number;
+  /** Internal load = sRPE × durationMin (Foster, AU). */
+  loadAU?: number;
   patientInitials?: string;
   patientLocation?: string;
   patientChronicity?: PatientContext["chronicity"];
@@ -39,6 +45,27 @@ export function appendHistory(entry: HistoryEntry): HistoryEntry[] {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     // ignore quota
+  }
+  return next;
+}
+
+/** Update the most recent entry matching (treeId, recommendationId) — used to attach
+ * post-session sRPE without duplicating the row. Returns the new history. */
+export function updateLatestEntry(
+  match: { treeId: string; recommendationId: string },
+  patch: Partial<HistoryEntry>,
+): HistoryEntry[] {
+  const existing = loadHistory();
+  const idx = existing.findIndex(
+    (e) => e.treeId === match.treeId && e.recommendationId === match.recommendationId,
+  );
+  if (idx === -1) return existing;
+  const next = existing.slice();
+  next[idx] = { ...next[idx], ...patch };
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    // ignore
   }
   return next;
 }

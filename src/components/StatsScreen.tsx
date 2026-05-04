@@ -6,6 +6,7 @@ import { trees } from "../data/trees";
 import { cn } from "../lib/cn";
 import { TrashIcon } from "./icons";
 import { chronicityShort } from "../types/patient";
+import { zoneFromAU, zoneLabels } from "../types/session";
 
 type StatsScreenProps = {
   history: HistoryEntry[];
@@ -46,6 +47,13 @@ export function StatsScreen({ history, onClear }: StatsScreenProps) {
     };
     let evaSum = 0;
     let evaCount = 0;
+    let auSum = 0;
+    let auCount = 0;
+
+    const now = Date.now();
+    let acuteSum = 0; // last 7 days
+    let chronicSum = 0; // last 28 days
+    const auEntries: HistoryEntry[] = [];
 
     for (const e of history) {
       byTree[e.treeId] = (byTree[e.treeId] ?? 0) + 1;
@@ -54,13 +62,33 @@ export function StatsScreen({ history, onClear }: StatsScreenProps) {
         evaSum += e.evaPeak;
         evaCount++;
       }
+      if (typeof e.loadAU === "number") {
+        auSum += e.loadAU;
+        auCount++;
+        auEntries.push(e);
+        const ageMs = now - new Date(e.date).getTime();
+        const ageDays = ageMs / (1000 * 60 * 60 * 24);
+        if (ageDays <= 7) acuteSum += e.loadAU;
+        if (ageDays <= 28) chronicSum += e.loadAU;
+      }
     }
+
+    // ACWR = (acute load) / (chronic average per week)
+    const chronicWeekly = chronicSum / 4;
+    const acwr =
+      chronicWeekly > 0 ? acuteSum / chronicWeekly : null;
 
     return {
       total: history.length,
       byTree,
       bySeverity,
       evaAvg: evaCount > 0 ? evaSum / evaCount : null,
+      auAvg: auCount > 0 ? auSum / auCount : null,
+      acuteSum,
+      chronicSum,
+      acwr,
+      auEntries: auEntries.slice(0, 14), // most recent 14 with AU data
+      auCount,
     };
   }, [history]);
 
@@ -109,6 +137,92 @@ export function StatsScreen({ history, onClear }: StatsScreenProps) {
           accent="text-accent-success"
         />
       </div>
+
+      {totals.auCount > 0 && (
+        <section className="mt-4 rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                Charge interne · sRPE Foster
+              </h3>
+              <p className="mt-1 text-xs text-white/40">
+                {totals.auCount} séance{totals.auCount > 1 ? "s" : ""} avec
+                charge enregistrée · UA = sRPE × min
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <MiniStatCard
+              label="Charge aiguë (7 j)"
+              value={`${totals.acuteSum} UA`}
+            />
+            <MiniStatCard
+              label="Charge chronique (28 j)"
+              value={`${totals.chronicSum} UA`}
+            />
+            <MiniStatCard
+              label="Moyenne / séance"
+              value={
+                totals.auAvg !== null
+                  ? `${Math.round(totals.auAvg)} UA`
+                  : "—"
+              }
+            />
+          </div>
+
+          {totals.acwr !== null && totals.auEntries.length >= 3 && (
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    ACWR aigu / chronique
+                  </div>
+                  <div className="text-xs text-white/40">
+                    Indicateur de tendance — non prédictif individuel
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className={cn(
+                      "text-2xl font-black tracking-tight",
+                      totals.acwr < 0.8 || totals.acwr > 1.5
+                        ? "text-accent-danger"
+                        : totals.acwr > 1.3
+                          ? "text-accent-warning"
+                          : "text-accent-success",
+                    )}
+                  >
+                    {totals.acwr.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                <div
+                  className="gradient-bg h-full"
+                  style={{
+                    width: `${Math.min(100, (totals.acwr / 2) * 100)}%`,
+                  }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] text-white/30">
+                <span>0,8</span>
+                <span className="text-white/45">Sweet spot 0,8–1,3</span>
+                <span>2,0</span>
+              </div>
+            </div>
+          )}
+
+          {totals.auEntries.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                Tendance · {totals.auEntries.length} dernières
+              </div>
+              <SRPEBars entries={totals.auEntries} />
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -272,6 +386,63 @@ function StatCard(props: {
         )}
       >
         {props.value}
+      </div>
+    </div>
+  );
+}
+
+function MiniStatCard(props: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+        {props.label}
+      </div>
+      <div className="mt-0.5 text-lg font-bold tracking-tight text-white">
+        {props.value}
+      </div>
+    </div>
+  );
+}
+
+const zoneBarColor: Record<string, string> = {
+  low: "bg-accent-success",
+  moderate: "bg-accent-warning/80",
+  high: "bg-accent-warning",
+  veryHigh: "bg-accent-danger",
+};
+
+function SRPEBars({ entries }: { entries: HistoryEntry[] }) {
+  // entries are sorted most-recent first; reverse for left-to-right oldest-first
+  const ordered = entries.slice().reverse();
+  const max = Math.max(800, ...ordered.map((e) => e.loadAU ?? 0));
+  const barAreaHeight = 96; // px, matches h-24
+
+  return (
+    <div className="space-y-1.5">
+      <div
+        className="flex items-end gap-1"
+        style={{ height: barAreaHeight }}
+      >
+        {ordered.map((e, i) => {
+          const au = e.loadAU ?? 0;
+          const heightPx = max > 0 ? (au / max) * barAreaHeight : 0;
+          const zone = zoneFromAU(au);
+          return (
+            <div
+              key={i}
+              className={cn(
+                "flex-1 rounded-t-sm transition-colors",
+                zoneBarColor[zone] ?? "bg-white/30",
+              )}
+              style={{ height: `${Math.max(4, heightPx)}px` }}
+              title={`${au} UA · ${zoneLabels[zone]} · ${new Date(e.date).toLocaleDateString("fr-FR")}`}
+            />
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-[10px] text-white/30">
+        <span>plus ancienne</span>
+        <span>récente →</span>
       </div>
     </div>
   );

@@ -29,10 +29,47 @@ export type SportInputs = {
   hasMatchSoon?: boolean;
 };
 
+export type PostSessionLoad = {
+  /** RPE on Borg CR-10 (0-10), captured 15-30 min post-session. */
+  srpe?: number;
+  /** Actual session duration in minutes (may differ from planned). */
+  actualDuration?: number;
+};
+
 export type SessionInputs = {
   exercise?: ExerciseInputs;
   running?: RunningInputs;
   sport?: SportInputs;
+  postSession?: PostSessionLoad;
+};
+
+/** Internal load = sRPE × duration in minutes (Foster's session-RPE method). */
+export function loadAU(srpe: number, durationMin: number): number {
+  return Math.round(srpe * durationMin);
+}
+
+/** Default duration to suggest based on activity inputs, in minutes. */
+export function suggestedDuration(inputs: SessionInputs | null | undefined): number | undefined {
+  if (!inputs) return undefined;
+  if (inputs.running?.duration !== undefined) return inputs.running.duration;
+  if (inputs.sport?.duration !== undefined) return inputs.sport.duration;
+  return undefined;
+}
+
+export type LoadZone = "low" | "moderate" | "high" | "veryHigh";
+
+export function zoneFromAU(au: number): LoadZone {
+  if (au < 200) return "low";
+  if (au < 400) return "moderate";
+  if (au < 600) return "high";
+  return "veryHigh";
+}
+
+export const zoneLabels: Record<LoadZone, string> = {
+  low: "Faible",
+  moderate: "Modérée",
+  high: "Élevée",
+  veryHigh: "Très élevée",
 };
 
 /** Schema indicates which subset of inputs the tree expects. */
