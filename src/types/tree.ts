@@ -50,12 +50,27 @@ export type RelatedContent = {
   url: string;
 };
 
+export type BehaviorAdvice = {
+  /** What the patient should do until the next session. Imperative phrases. */
+  toDo?: string[];
+  /** What to avoid. */
+  toAvoid?: string[];
+  /** Symptoms that should trigger an earlier consultation. */
+  alertSigns?: string[];
+  /** Free-text self-care note (e.g. analgesic guidance). */
+  selfCare?: string;
+};
+
 export type RecommendationNode = BaseNode & {
   kind: "recommendation";
   severity: Severity;
   message: string;
   cta?: string;
   relatedContent?: RelatedContent[];
+  /** Concrete behavioral guidance for the period until the next session. */
+  behavior?: BehaviorAdvice;
+  /** A short paragraph the kiné can read or paraphrase to the patient (in "tu"). */
+  patientScript?: string;
 };
 
 export type DecisionNode =

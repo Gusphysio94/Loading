@@ -1,4 +1,4 @@
-import type { RecapEntry, Tree } from "../types/tree";
+import type { BehaviorAdvice, RecapEntry, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityLabels, hasContext } from "../types/patient";
 import type { SessionInputs } from "../types/session";
@@ -91,11 +91,38 @@ function formatSessionInputsText(inputs: SessionInputs | null | undefined): stri
   return lines;
 }
 
+function formatBehaviorText(behavior: BehaviorAdvice | undefined): string[] {
+  if (!behavior) return [];
+  const lines: string[] = [];
+  if (behavior.toDo && behavior.toDo.length) {
+    lines.push("");
+    lines.push("À faire :");
+    for (const it of behavior.toDo) lines.push(`  ✓ ${it}`);
+  }
+  if (behavior.toAvoid && behavior.toAvoid.length) {
+    lines.push("");
+    lines.push("À éviter :");
+    for (const it of behavior.toAvoid) lines.push(`  ✗ ${it}`);
+  }
+  if (behavior.selfCare) {
+    lines.push("");
+    lines.push(`Auto-soin : ${behavior.selfCare}`);
+  }
+  if (behavior.alertSigns && behavior.alertSigns.length) {
+    lines.push("");
+    lines.push("Critères d'alerte (recontacter) :");
+    for (const it of behavior.alertSigns) lines.push(`  ⚠ ${it}`);
+  }
+  return lines;
+}
+
 export function formatRecapAsText(args: {
   tree: Tree;
   recap: RecapEntry[];
   recommendationTitle: string;
   recommendationMessage: string;
+  recommendationBehavior?: BehaviorAdvice;
+  recommendationPatientScript?: string;
   patientContext?: PatientContext | null;
   sessionInputs?: SessionInputs | null;
   date?: Date;
@@ -151,6 +178,17 @@ export function formatRecapAsText(args: {
   lines.push("");
   lines.push(`Conclusion : ${args.recommendationTitle}`);
   lines.push(args.recommendationMessage);
+
+  for (const l of formatBehaviorText(args.recommendationBehavior)) {
+    lines.push(l);
+  }
+
+  if (args.recommendationPatientScript) {
+    lines.push("");
+    lines.push("À dire au patient :");
+    lines.push(`« ${args.recommendationPatientScript} »`);
+  }
+
   lines.push("");
   lines.push("— Loading by Castel Physio");
   return lines.join("\n");

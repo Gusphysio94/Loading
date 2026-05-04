@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import type { RecapEntry, RecommendationNode, Tree } from "../types/tree";
+import type {
+  BehaviorAdvice,
+  RecapEntry,
+  RecommendationNode,
+  Tree,
+} from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityShort, hasContext } from "../types/patient";
 import type { SessionInputs, PostSessionLoad } from "../types/session";
@@ -16,6 +21,8 @@ import {
   ShareIcon,
   PrintIcon,
   EditIcon,
+  ChevronRightIcon,
+  MessageSquareIcon,
 } from "./icons";
 import { formatRecapAsText, shareOrCopy, copyToClipboard } from "../lib/recap";
 
@@ -92,6 +99,8 @@ export function RecommendationScreen({
     recap,
     recommendationTitle: node.title,
     recommendationMessage: node.message,
+    recommendationBehavior: node.behavior,
+    recommendationPatientScript: node.patientScript,
     patientContext,
     sessionInputs,
   });
@@ -185,6 +194,15 @@ export function RecommendationScreen({
           </p>
         </div>
       </div>
+
+      {node.behavior && <BehaviorSection behavior={node.behavior} />}
+
+      {node.patientScript && (
+        <PatientScriptCard
+          script={node.patientScript}
+          onShowToast={(k) => showToast(k)}
+        />
+      )}
 
       {onPostSessionChange && (
         <SRPECard
@@ -461,12 +479,194 @@ export function RecommendationScreen({
                 "border-accent-danger/30 bg-accent-danger/10 text-accent-danger",
             )}
           >
-            {toast.kind === "copied" && "Résumé copié dans le presse-papiers"}
+            {toast.kind === "copied" && "Copié dans le presse-papiers"}
             {toast.kind === "shared" && "Partagé"}
             {toast.kind === "error" && "Échec — réessaye"}
           </div>
         </motion.div>
       )}
     </motion.div>
+  );
+}
+
+function BehaviorSection({ behavior }: { behavior: BehaviorAdvice }) {
+  const has = !!(
+    behavior.toDo?.length ||
+    behavior.toAvoid?.length ||
+    behavior.alertSigns?.length ||
+    behavior.selfCare
+  );
+  if (!has) return null;
+
+  return (
+    <section className="print-card mt-4 rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+        Comportement à tenir
+      </h3>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {behavior.toDo && behavior.toDo.length > 0 && (
+          <BehaviorBlock
+            title="À faire"
+            accent="text-accent-success"
+            border="border-accent-success/25"
+            bg="bg-accent-success/[0.04]"
+            icon={<CheckIcon className="h-3.5 w-3.5" />}
+            items={behavior.toDo}
+          />
+        )}
+
+        {behavior.toAvoid && behavior.toAvoid.length > 0 && (
+          <BehaviorBlock
+            title="À éviter"
+            accent="text-accent-warning"
+            border="border-accent-warning/25"
+            bg="bg-accent-warning/[0.04]"
+            icon={<StopIcon className="h-3.5 w-3.5" />}
+            items={behavior.toAvoid}
+          />
+        )}
+      </div>
+
+      {behavior.selfCare && (
+        <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3 text-sm text-white/75">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            Auto-soin
+          </span>
+          <div className="mt-1">{behavior.selfCare}</div>
+        </div>
+      )}
+
+      {behavior.alertSigns && behavior.alertSigns.length > 0 && (
+        <div className="mt-4 rounded-xl border border-accent-danger/25 bg-accent-danger/[0.05] p-4">
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-danger">
+            <AlertIcon className="h-3.5 w-3.5" />
+            Critères d'alerte — recontacter
+          </div>
+          <ul className="space-y-1.5">
+            {behavior.alertSigns.map((s, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-sm leading-snug text-white/80"
+              >
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent-danger" />
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function BehaviorBlock({
+  title,
+  accent,
+  border,
+  bg,
+  icon,
+  items,
+}: {
+  title: string;
+  accent: string;
+  border: string;
+  bg: string;
+  icon: React.ReactNode;
+  items: string[];
+}) {
+  return (
+    <div className={cn("rounded-xl border p-4", border, bg)}>
+      <div
+        className={cn(
+          "mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em]",
+          accent,
+        )}
+      >
+        <span className={accent}>{icon}</span>
+        {title}
+      </div>
+      <ul className="space-y-1.5">
+        {items.map((it, i) => (
+          <li
+            key={i}
+            className="flex items-start gap-2 text-sm leading-snug text-white/85"
+          >
+            <span
+              className={cn(
+                "mt-1.5 h-1 w-1 shrink-0 rounded-full",
+                accent.replace("text-", "bg-"),
+              )}
+            />
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PatientScriptCard({
+  script,
+  onShowToast,
+}: {
+  script: string;
+  onShowToast: (kind: "copied" | "error") => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  async function handleCopyScript() {
+    const result = await copyToClipboard(script);
+    onShowToast(result === "copied" ? "copied" : "error");
+  }
+
+  return (
+    <section className="no-print mt-4 overflow-hidden rounded-2xl border border-brand-pink/25 bg-brand-pink/[0.04]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-5 py-4 text-left"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-pink/15 text-brand-pink">
+          <MessageSquareIcon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-pink/85">
+            À dire au patient
+          </div>
+          <div className="truncate text-sm font-medium text-white/85">
+            Script à lire ou paraphraser
+          </div>
+        </div>
+        <ChevronRightIcon
+          className={cn(
+            "h-4 w-4 shrink-0 text-brand-pink/60 transition-transform",
+            open && "rotate-90",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="border-t border-brand-pink/15 px-5 pb-5 pt-4">
+          <p className="text-sm leading-relaxed text-white/85 sm:text-base">
+            « {script} »
+          </p>
+
+          <div className="mt-4 flex items-center gap-2">
+            <motion.button
+              type="button"
+              onClick={handleCopyScript}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-2 rounded-xl border border-brand-pink/30 bg-brand-pink/[0.08] px-3 py-2 text-xs font-semibold text-brand-pink transition hover:border-brand-pink/60 hover:bg-brand-pink/[0.15]"
+            >
+              <CopyIcon className="h-3.5 w-3.5" />
+              Copier le script
+            </motion.button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
