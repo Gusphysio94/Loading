@@ -9,7 +9,9 @@ import { RecommendationScreen } from "./components/RecommendationScreen";
 import { EVAScreen } from "./components/EVAScreen";
 import { RedFlagsScreen } from "./components/RedFlagsScreen";
 import { StatsScreen } from "./components/StatsScreen";
+import { Onboarding } from "./components/Onboarding";
 import { treesById } from "./data/trees";
+import { hasSeenOnboarding, markOnboardingSeen } from "./lib/onboarding";
 import { buildRecap } from "./lib/recap";
 import { loadState, saveState, clearState } from "./lib/persistence";
 import {
@@ -39,6 +41,7 @@ export default function App() {
   const [resumeAvailable, setResumeAvailable] = useState<TreeState | null>(null);
   const [patientContext, setPatientContext] = useState<PatientContext>({});
   const [history, setHistoryState] = useState<HistoryEntry[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const initialLoad = useRef(true);
   const recordedRecoIds = useRef<Set<string>>(new Set());
 
@@ -58,7 +61,13 @@ export default function App() {
     const ctx = loadPatientContext();
     if (ctx) setPatientContext(ctx);
     setHistoryState(loadHistory());
+    if (!hasSeenOnboarding()) setShowOnboarding(true);
     initialLoad.current = false;
+  }, []);
+
+  const handleCloseOnboarding = useCallback(() => {
+    markOnboardingSeen();
+    setShowOnboarding(false);
   }, []);
 
   useEffect(() => {
@@ -163,6 +172,24 @@ export default function App() {
     setMode("home");
   }, []);
 
+  const handleEditStep = useCallback((index: number) => {
+    setState((prev) => {
+      if (!prev) return prev;
+      // Truncate history to keep up to and including the step at `index`
+      // (history index = recap entry index, since recap[i] corresponds to history[i])
+      const newHistory = prev.history.slice(0, index + 1);
+      // Drop EVA values that are no longer on the path
+      const validIds = new Set(newHistory);
+      const newEvaValues: Record<string, number> = {};
+      for (const [k, v] of Object.entries(prev.evaValues)) {
+        if (validIds.has(k)) newEvaValues[k] = v;
+      }
+      return { ...prev, history: newHistory, evaValues: newEvaValues };
+    });
+    // Reset reco-recorded ids so a fresh path can be re-recorded
+    recordedRecoIds.current = new Set();
+  }, []);
+
   const handleRestart = useCallback(() => {
     setState((prev) => {
       if (!prev) return prev;
@@ -211,6 +238,8 @@ export default function App() {
 
   return (
     <div className="stars-bg relative min-h-screen">
+      {showOnboarding && <Onboarding onClose={handleCloseOnboarding} />}
+
       <Header {...headerProps} />
 
       {mode === "tree" &&
@@ -285,6 +314,7 @@ export default function App() {
               patientContext={patientContext}
               onRestart={handleRestart}
               onHome={handleHome}
+              onEditStep={handleEditStep}
             />
           )}
         </AnimatePresence>

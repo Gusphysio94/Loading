@@ -12,6 +12,7 @@ import {
   CopyIcon,
   ShareIcon,
   PrintIcon,
+  EditIcon,
 } from "./icons";
 import { formatRecapAsText, shareOrCopy, copyToClipboard } from "../lib/recap";
 
@@ -22,6 +23,7 @@ type RecommendationScreenProps = {
   patientContext?: PatientContext;
   onRestart: () => void;
   onHome: () => void;
+  onEditStep?: (index: number) => void;
 };
 
 const severityConfig = {
@@ -72,6 +74,7 @@ export function RecommendationScreen({
   patientContext,
   onRestart,
   onHome,
+  onEditStep,
 }: RecommendationScreenProps) {
   const config = severityConfig[node.severity];
   const { Icon } = config;
@@ -204,62 +207,94 @@ export function RecommendationScreen({
               )}
             </div>
           )}
-          <ul className="mt-4 space-y-2.5">
-            {recap.map((entry, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-3 text-sm leading-snug"
-              >
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[10px] font-semibold text-white/50">
-                  {i + 1}
-                </span>
-                <div className="flex-1">
-                  <div className="text-white/85">
-                    {entry.kind === "modulation" ? (
-                      <>
-                        <span className="text-white/70">{entry.label}</span>
-                        <span className="text-white/40"> · c'est mieux ?</span>{" "}
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            entry.answer === "OUI"
-                              ? "text-accent-success"
-                              : "text-accent-danger",
-                          )}
-                        >
-                          {entry.answer}
-                        </span>
-                      </>
-                    ) : entry.kind === "eva" ? (
-                      <>
-                        <span className="text-white/70">{entry.label}</span>
-                        <span className="text-white/40"> :</span>{" "}
-                        <span className="font-semibold text-brand-pink">
-                          {entry.answer}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-white/70">{entry.label}</span>
-                        <span className="text-white/40"> :</span>{" "}
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            entry.answer === "OUI"
-                              ? "text-brand-coral"
-                              : entry.answer === "NON"
+          {onEditStep && (
+            <p className="no-print mt-3 text-[11px] text-white/40">
+              Touche une étape pour la corriger.
+            </p>
+          )}
+
+          <ul className="mt-3 space-y-1.5">
+            {recap.map((entry, i) => {
+              const content = (
+                <>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[10px] font-semibold text-white/50 group-hover:bg-brand-pink/20 group-hover:text-brand-pink">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1 text-sm leading-snug">
+                    <div className="text-white/85">
+                      {entry.kind === "modulation" ? (
+                        <>
+                          <span className="text-white/70">{entry.label}</span>
+                          <span className="text-white/40">
+                            {" "}· c'est mieux ?
+                          </span>{" "}
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              entry.answer === "OUI"
                                 ? "text-accent-success"
-                                : "text-white",
-                          )}
-                        >
-                          {entry.answer}
-                        </span>
-                      </>
-                    )}
+                                : "text-accent-danger",
+                            )}
+                          >
+                            {entry.answer}
+                          </span>
+                        </>
+                      ) : entry.kind === "eva" ? (
+                        <>
+                          <span className="text-white/70">{entry.label}</span>
+                          <span className="text-white/40"> :</span>{" "}
+                          <span className="font-semibold text-brand-pink">
+                            {entry.answer}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-white/70">{entry.label}</span>
+                          <span className="text-white/40"> :</span>{" "}
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              entry.answer === "OUI"
+                                ? "text-brand-coral"
+                                : entry.answer === "NON"
+                                  ? "text-accent-success"
+                                  : "text-white",
+                            )}
+                          >
+                            {entry.answer}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </>
+              );
+
+              if (onEditStep) {
+                return (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => onEditStep(i)}
+                      aria-label={`Modifier l'étape ${i + 1} : ${entry.label}`}
+                      className="group flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/[0.04]"
+                    >
+                      {content}
+                      <EditIcon
+                        className="mt-0.5 h-4 w-4 shrink-0 text-white/0 transition-colors group-hover:text-white/55 group-focus-visible:text-white/55"
+                        aria-hidden
+                      />
+                    </button>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={i} className="flex items-start gap-3 px-2 py-2">
+                  {content}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
