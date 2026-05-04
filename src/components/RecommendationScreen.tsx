@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import type { RecapEntry, RecommendationNode, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityShort, hasContext } from "../types/patient";
+import type { SessionInputs } from "../types/session";
+import { hasAnyInput, formatPace } from "../types/session";
 import { cn } from "../lib/cn";
 import {
   CheckIcon,
@@ -21,6 +23,7 @@ type RecommendationScreenProps = {
   node: RecommendationNode;
   recap: RecapEntry[];
   patientContext?: PatientContext;
+  sessionInputs?: SessionInputs;
   onRestart: () => void;
   onHome: () => void;
   onEditStep?: (index: number) => void;
@@ -72,6 +75,7 @@ export function RecommendationScreen({
   node,
   recap,
   patientContext,
+  sessionInputs,
   onRestart,
   onHome,
   onEditStep,
@@ -86,9 +90,11 @@ export function RecommendationScreen({
     recommendationTitle: node.title,
     recommendationMessage: node.message,
     patientContext,
+    sessionInputs,
   });
 
   const ctxFilled = hasContext(patientContext);
+  const inputsFilled = hasAnyInput(sessionInputs);
 
   function showToast(kind: "shared" | "copied" | "error") {
     setToast({ kind, key: Date.now() });
@@ -188,21 +194,62 @@ export function RecommendationScreen({
             </span>
           </div>
 
-          {ctxFilled && patientContext && (
+          {(ctxFilled || inputsFilled) && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {patientContext.initials && (
+              {patientContext?.initials && (
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
                   Patient : {patientContext.initials}
                 </span>
               )}
-              {patientContext.location && (
+              {patientContext?.location && (
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
                   {patientContext.location}
                 </span>
               )}
-              {patientContext.chronicity && (
+              {patientContext?.chronicity && (
                 <span className="rounded-full border border-brand-pink/25 bg-brand-pink/[0.08] px-2.5 py-0.5 text-[11px] font-medium text-brand-pink">
                   {chronicityShort[patientContext.chronicity]}
+                </span>
+              )}
+              {sessionInputs?.exercise?.exerciseName && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.exercise.exerciseName}
+                </span>
+              )}
+              {sessionInputs?.exercise?.load !== undefined && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.exercise.load} kg
+                </span>
+              )}
+              {sessionInputs?.exercise?.sets !== undefined &&
+                sessionInputs.exercise.reps !== undefined && (
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                    {sessionInputs.exercise.sets}×{sessionInputs.exercise.reps}
+                  </span>
+                )}
+              {sessionInputs?.running?.sessionType && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.running.sessionType}
+                </span>
+              )}
+              {sessionInputs?.running?.distance !== undefined && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.running.distance} km
+                </span>
+              )}
+              {sessionInputs?.running?.pace !== undefined && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {formatPace(sessionInputs.running.pace)}
+                </span>
+              )}
+              {sessionInputs?.running?.elevation !== undefined && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.running.elevation} m D+
+                </span>
+              )}
+              {sessionInputs?.sport?.sport && (
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/70">
+                  {sessionInputs.sport.sport}
                 </span>
               )}
             </div>

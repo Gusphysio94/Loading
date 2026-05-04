@@ -1,15 +1,29 @@
 import { motion } from "framer-motion";
 import type { ModulationNode } from "../types/tree";
+import type { SessionInputs } from "../types/session";
+import { hasAnyInput } from "../types/session";
 import { cn } from "../lib/cn";
 import { CheckIcon, ClockIcon } from "./icons";
 import { withInlineGlossary } from "./InlineGlossary";
+import { bulletComputers } from "../data/bulletComputers";
 
 type ModulationScreenProps = {
   node: ModulationNode;
+  inputs?: SessionInputs;
   onAnswer: (nextId: string) => void;
 };
 
-export function ModulationScreen({ node, onAnswer }: ModulationScreenProps) {
+export function ModulationScreen({
+  node,
+  inputs,
+  onAnswer,
+}: ModulationScreenProps) {
+  const computer = node.computeBulletsKey
+    ? bulletComputers[node.computeBulletsKey]
+    : undefined;
+  const usePersonalized = computer && hasAnyInput(inputs);
+  const bullets = usePersonalized && inputs ? computer(inputs) : node.bullets;
+
   return (
     <motion.div
       key={node.id}
@@ -28,10 +42,17 @@ export function ModulationScreen({ node, onAnswer }: ModulationScreenProps) {
         {node.title}
       </h2>
 
+      {usePersonalized && (
+        <div className="mt-3 inline-flex w-fit items-center gap-2 rounded-full border border-brand-pink/30 bg-brand-pink/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-brand-pink">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand-pink" />
+          Personnalisé
+        </div>
+      )}
+
       <div className="surface-strong mt-6 overflow-hidden rounded-2xl">
         <div className="gradient-bg h-[3px]" />
         <ul className="divide-y divide-white/5">
-          {node.bullets.map((bullet, i) => (
+          {bullets.map((bullet, i) => (
             <motion.li
               key={i}
               initial={{ opacity: 0, x: -8 }}

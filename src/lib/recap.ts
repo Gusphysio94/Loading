@@ -1,6 +1,8 @@
 import type { RecapEntry, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityLabels, hasContext } from "../types/patient";
+import type { SessionInputs } from "../types/session";
+import { hasAnyInput, formatPace } from "../types/session";
 
 export function buildRecap(
   tree: Tree,
@@ -37,12 +39,53 @@ export function buildRecap(
   return entries;
 }
 
+function formatSessionInputsText(inputs: SessionInputs | null | undefined): string[] {
+  if (!inputs || !hasAnyInput(inputs)) return [];
+  const lines: string[] = ["", "Détails de la séance :"];
+  const e = inputs.exercise;
+  if (e) {
+    if (e.exerciseName) lines.push(`• Exercice : ${e.exerciseName}`);
+    const params: string[] = [];
+    if (e.load !== undefined) params.push(`${e.load} kg`);
+    if (e.sets !== undefined && e.reps !== undefined)
+      params.push(`${e.sets}×${e.reps}`);
+    else if (e.reps !== undefined) params.push(`${e.reps} reps`);
+    if (e.tempo) params.push(`tempo ${e.tempo}`);
+    if (e.amplitude)
+      params.push(`amplitude ${e.amplitude === "full" ? "complète" : "partielle"}`);
+    if (params.length) lines.push(`• Paramètres : ${params.join(" · ")}`);
+  }
+  const r = inputs.running;
+  if (r) {
+    if (r.sessionType) lines.push(`• Type de sortie : ${r.sessionType}`);
+    const params: string[] = [];
+    if (r.distance !== undefined) params.push(`${r.distance} km`);
+    if (r.duration !== undefined) params.push(`${r.duration} min`);
+    if (r.pace !== undefined) params.push(formatPace(r.pace));
+    if (r.elevation !== undefined) params.push(`${r.elevation} m D+`);
+    if (r.intervals !== undefined) params.push(`${r.intervals} intervalles`);
+    if (params.length) lines.push(`• Paramètres : ${params.join(" · ")}`);
+  }
+  const s = inputs.sport;
+  if (s) {
+    if (s.sport) lines.push(`• Sport : ${s.sport}`);
+    const params: string[] = [];
+    if (s.sportType) params.push(s.sportType);
+    if (s.duration !== undefined) params.push(`${s.duration} min`);
+    if (s.hasMatchSoon !== undefined)
+      params.push(`match prévu : ${s.hasMatchSoon ? "oui" : "non"}`);
+    if (params.length) lines.push(`• Paramètres : ${params.join(" · ")}`);
+  }
+  return lines;
+}
+
 export function formatRecapAsText(args: {
   tree: Tree;
   recap: RecapEntry[];
   recommendationTitle: string;
   recommendationMessage: string;
   patientContext?: PatientContext | null;
+  sessionInputs?: SessionInputs | null;
   date?: Date;
 }): string {
   const date = args.date ?? new Date();
@@ -69,6 +112,10 @@ export function formatRecapAsText(args: {
         `Chronicité : ${chronicityLabels[args.patientContext.chronicity]}`,
       );
     }
+  }
+
+  for (const l of formatSessionInputsText(args.sessionInputs)) {
+    lines.push(l);
   }
 
   lines.push("");

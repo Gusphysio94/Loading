@@ -35,6 +35,10 @@ export type EVANode = BaseNode & {
 export type ModulationNode = BaseNode & {
   kind: "modulation";
   bullets: string[];
+  /** Optional richer bullets when concrete session inputs are provided.
+   * Imported lazily where computeBullets is bound (we keep the function
+   * reference in the data file). */
+  computeBulletsKey?: string;
   followUp?: string;
   /** Optional badge such as a "temporal jump" warning. */
   temporalNote?: string;
@@ -68,6 +72,8 @@ export type Tree = {
   icon: string;
   startId: string;
   nodes: Record<string, DecisionNode>;
+  /** When set, the app shows an optional "Inputs séance" screen before the tree starts. */
+  inputsSchema?: "exercise" | "running" | "sport";
 };
 
 export type RecapEntry = {

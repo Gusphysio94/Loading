@@ -10,6 +10,7 @@ import { EVAScreen } from "./components/EVAScreen";
 import { RedFlagsScreen } from "./components/RedFlagsScreen";
 import { StatsScreen } from "./components/StatsScreen";
 import { Onboarding } from "./components/Onboarding";
+import { SessionInputsScreen } from "./components/SessionInputsScreen";
 import { treesById } from "./data/trees";
 import { hasSeenOnboarding, markOnboardingSeen } from "./lib/onboarding";
 import { buildRecap } from "./lib/recap";
@@ -26,14 +27,16 @@ import {
   type HistoryEntry,
 } from "./lib/history";
 import type { PatientContext } from "./types/patient";
+import type { SessionInputs } from "./types/session";
 
 type TreeState = {
   treeId: string;
   history: string[];
   evaValues: Record<string, number>;
+  sessionInputs: SessionInputs;
 };
 
-type Mode = "home" | "tree" | "redFlags" | "stats";
+type Mode = "home" | "tree" | "treeInputs" | "redFlags" | "stats";
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("home");
@@ -56,6 +59,7 @@ export default function App() {
         treeId: persisted.treeId,
         history: persisted.history,
         evaValues: persisted.evaValues ?? {},
+        sessionInputs: persisted.sessionInputs ?? {},
       });
     }
     const ctx = loadPatientContext();
@@ -110,8 +114,22 @@ export default function App() {
   const handleSelectTree = useCallback((treeId: string) => {
     const t = treesById[treeId];
     if (!t) return;
-    setState({ treeId, history: [t.startId], evaValues: {} });
+    setState({
+      treeId,
+      history: [t.startId],
+      evaValues: {},
+      sessionInputs: {},
+    });
     setResumeAvailable(null);
+    setMode(t.inputsSchema ? "treeInputs" : "tree");
+  }, []);
+
+  const handleInputsContinue = useCallback((inputs: SessionInputs) => {
+    setState((prev) => (prev ? { ...prev, sessionInputs: inputs } : prev));
+    setMode("tree");
+  }, []);
+
+  const handleInputsSkip = useCallback(() => {
     setMode("tree");
   }, []);
 
@@ -151,6 +169,12 @@ export default function App() {
   }, []);
 
   const handleBack = useCallback(() => {
+    if (mode === "treeInputs") {
+      clearState();
+      setState(null);
+      setMode("home");
+      return;
+    }
     if (mode !== "tree") {
       setMode("home");
       return;
@@ -158,6 +182,12 @@ export default function App() {
     setState((prev) => {
       if (!prev) return prev;
       if (prev.history.length <= 1) {
+        // If the tree has inputs, going back from q1 returns to inputs screen
+        const t = treesById[prev.treeId];
+        if (t?.inputsSchema) {
+          setMode("treeInputs");
+          return prev;
+        }
         clearState();
         setMode("home");
         return null;
@@ -194,7 +224,13 @@ export default function App() {
     setState((prev) => {
       if (!prev) return prev;
       const t = treesById[prev.treeId];
-      return { treeId: prev.treeId, history: [t.startId], evaValues: {} };
+      return {
+        treeId: prev.treeId,
+        history: [t.startId],
+        evaValues: {},
+        // Keep the session inputs — same patient, same session
+        sessionInputs: prev.sessionInputs,
+      };
     });
     recordedRecoIds.current = new Set();
   }, []);
@@ -219,7 +255,9 @@ export default function App() {
       ? "Drapeaux rouges"
       : mode === "stats"
         ? "Statistiques"
-        : tree?.shortTitle;
+        : mode === "treeInputs"
+          ? `${tree?.shortTitle ?? ""} · détails`
+          : tree?.shortTitle;
 
   const headerProps = useMemo(
     () => ({
@@ -250,6 +288,19 @@ export default function App() {
           <Breadcrumb tree={tree} history={state.history} />
         )}
 
+      {mode === "treeInputs" && state && tree && tree.inputsSchema && (
+        <main>
+          <SessionInputsScreen
+            schema={tree.inputsSchema}
+            treeTitle={tree.title}
+            initial={state.sessionInputs}
+            onContinue={handleInputsContinue}
+            onSkip={handleInputsSkip}
+          />
+        </main>
+      )}
+
+      {mode !== "treeInputs" && (
       <main>
         <AnimatePresence mode="wait">
           {mode === "redFlags" ? (
@@ -303,6 +354,7 @@ export default function App() {
             <ModulationScreen
               key={currentNode.id}
               node={currentNode}
+              inputs={state.sessionInputs}
               onAnswer={handleAnswer}
             />
           ) : (
@@ -312,6 +364,7 @@ export default function App() {
               node={currentNode}
               recap={recap}
               patientContext={patientContext}
+              sessionInputs={state.sessionInputs}
               onRestart={handleRestart}
               onHome={handleHome}
               onEditStep={handleEditStep}
@@ -319,6 +372,7 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+      )}
     </div>
   );
 }

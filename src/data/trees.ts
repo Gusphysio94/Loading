@@ -50,6 +50,7 @@ export const exerciceTree: Tree = {
   description: "Renforcement musculaire, mobilité, exercices ciblés.",
   icon: "dumbbell",
   startId: "q1",
+  inputsSchema: "exercise",
   nodes: {
     q1: {
       id: "q1",
@@ -86,6 +87,7 @@ export const exerciceTree: Tree = {
         "Moins d'amplitude",
         "Plus lentement",
       ],
+      computeBulletsKey: "exercise_mod1",
       followUp: "Après ces modulations, c'est mieux ?",
       choices: [
         { label: "OUI", next: "r_keep", variant: "yes" },
@@ -106,6 +108,7 @@ export const exerciceTree: Tree = {
         "On réduit le nombre de répétitions",
         "Ou on refait la même séance sans changer les modalités, pour observer",
       ],
+      computeBulletsKey: "exercise_mod2",
       followUp: "Après ces modulations, c'est mieux ?",
       choices: [
         { label: "OUI", next: "r_keep", variant: "yes" },
@@ -147,6 +150,7 @@ export const courseTree: Tree = {
   description: "Sortie longue, intervalles, dénivelé, allure fondamentale.",
   icon: "running",
   startId: "q1",
+  inputsSchema: "running",
   nodes: {
     q1: {
       id: "q1",
@@ -192,6 +196,7 @@ export const courseTree: Tree = {
         "Marche 2 minutes",
         "Reprend la course à allure fondamentale",
       ],
+      computeBulletsKey: "running_mod1",
       followUp: "Après cette pause, c'est mieux ?",
       choices: [
         { label: "OUI", next: "r_finish_easy", variant: "yes" },
@@ -209,6 +214,7 @@ export const courseTree: Tree = {
         "Sortie intervalles : diviser le nombre d'intervalles par 2",
         "Sorties avec dénivelé : diviser la distance de dénivelé par 2 et/ou baisser l'intensité prévue en D+",
       ],
+      computeBulletsKey: "running_mod2",
       temporalNote: "À évaluer sur les prochaines séances",
       followUp: "Après application sur les séances suivantes, c'est mieux ?",
       choices: [
@@ -260,6 +266,7 @@ export const sportTree: Tree = {
   description: "Sports collectifs, sports de raquette, entraînements intermittents.",
   icon: "trophy",
   startId: "q1",
+  inputsSchema: "sport",
   nodes: {
     q1: {
       id: "q1",
@@ -305,6 +312,7 @@ export const sportTree: Tree = {
         "Éviter l'intensité",
         "Se focus sur les gestes techniques contrôlés",
       ],
+      computeBulletsKey: "sport_mod1",
       followUp: "Après ces modulations, c'est mieux ?",
       choices: [
         { label: "OUI", next: "r_finish_cool", variant: "yes" },
@@ -323,6 +331,7 @@ export const sportTree: Tree = {
         "Technique > intensité",
         "Éviter les matchs temporairement",
       ],
+      computeBulletsKey: "sport_mod2",
       temporalNote: "À évaluer sur les prochaines séances",
       followUp: "Après application sur les séances suivantes, c'est mieux ?",
       choices: [
