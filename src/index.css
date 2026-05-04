@@ -1,0 +1,226 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --color-night-50: #f4f4f8;
+  --color-night-100: #1f1f2e;
+  --color-night-200: #18182a;
+  --color-night-300: #131322;
+  --color-night-400: #0e0e1c;
+  --color-night-500: #0a0a14;
+  --color-night-600: #07070f;
+  --color-night-700: #050509;
+
+  --color-brand-coral: #ff5470;
+  --color-brand-pink: #f04ea0;
+  --color-brand-violet: #a64bff;
+
+  --color-accent-success: #34d399;
+  --color-accent-warning: #fbbf24;
+  --color-accent-danger: #f87171;
+}
+
+@media print {
+  html,
+  body,
+  .stars-bg {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print,
+  header,
+  nav {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-card {
+    border: 1px solid #ddd !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  .print-card * {
+    color: #111 !important;
+    border-color: #ddd !important;
+    background: transparent !important;
+    text-shadow: none !important;
+  }
+  .print-card .gradient-text,
+  .print-card .gradient-bg {
+    background: none !important;
+    -webkit-text-fill-color: #111 !important;
+    color: #111 !important;
+  }
+  .print-card a {
+    color: #1a4ed8 !important;
+    text-decoration: underline !important;
+  }
+  @page {
+    margin: 18mm 16mm;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-night-500);
+    color: #f3f4f6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  button,
+  [role="button"],
+  a {
+    outline: none;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--color-brand-pink);
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(
+      90deg,
+      var(--color-brand-coral) 0%,
+      var(--color-brand-pink) 50%,
+      var(--color-brand-violet) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(
+      135deg,
+      var(--color-brand-coral) 0%,
+      var(--color-brand-pink) 50%,
+      var(--color-brand-violet) 100%
+    );
+  }
+
+  .surface {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .surface-strong {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+  }
+
+  .eva-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--eva-color, var(--color-brand-pink)) 0%,
+      var(--eva-color, var(--color-brand-pink)) var(--eva-progress, 0%),
+      rgba(255, 255, 255, 0.08) var(--eva-progress, 0%),
+      rgba(255, 255, 255, 0.08) 100%
+    );
+    border-radius: 999px;
+    outline: none;
+    transition: background 0.15s ease;
+  }
+  .eva-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--eva-color, var(--color-brand-pink));
+    border: 4px solid var(--color-night-500);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 6px 16px -4px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .eva-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+  }
+  .eva-slider::-moz-range-thumb {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--eva-color, var(--color-brand-pink));
+    border: 4px solid var(--color-night-500);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 6px 16px -4px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+  }
+  .eva-slider:focus-visible {
+    outline: 2px solid var(--color-brand-pink);
+    outline-offset: 6px;
+  }
+
+  .print-only {
+    display: none;
+  }
+
+  .stars-bg {
+    background-color: var(--color-night-500);
+    background-image:
+      radial-gradient(2px 2px at 20% 30%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.4), transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%, rgba(255, 255, 255, 0.3), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.4), transparent),
+      radial-gradient(2px 2px at 90% 50%, rgba(255, 255, 255, 0.3), transparent),
+      radial-gradient(1px 1px at 10% 60%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1.5px 1.5px at 70% 10%, rgba(255, 255, 255, 0.4), transparent),
+      radial-gradient(1px 1px at 30% 50%, rgba(255, 255, 255, 0.3), transparent),
+      radial-gradient(
+        ellipse at 50% 0%,
+        rgba(166, 75, 255, 0.15) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse at 100% 100%,
+        rgba(255, 84, 112, 0.1) 0%,
+        transparent 50%
+      );
+    background-size:
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      400px 400px,
+      100% 100%,
+      100% 100%;
+  }
+}
