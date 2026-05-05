@@ -7,6 +7,9 @@ import { GlossaryTerm } from "./Glossary";
 type EVAScreenProps = {
   node: EVANode;
   initialValue?: number;
+  /** Optional override coming from patient context (e.g. chronicity-based). */
+  thresholdOverride?: number;
+  thresholdNote?: string;
   onConfirm: (value: number, nextId: string) => void;
 };
 
@@ -50,13 +53,20 @@ function severityFor(value: number, threshold: number): {
   };
 }
 
-export function EVAScreen({ node, initialValue, onConfirm }: EVAScreenProps) {
+export function EVAScreen({
+  node,
+  initialValue,
+  thresholdOverride,
+  thresholdNote,
+  onConfirm,
+}: EVAScreenProps) {
   const [value, setValue] = useState<number>(initialValue ?? 0);
-  const sev = severityFor(value, node.threshold);
+  const effectiveThreshold = thresholdOverride ?? node.threshold;
+  const sev = severityFor(value, effectiveThreshold);
 
   function handleConfirm() {
     const nextId =
-      value > node.threshold ? node.above.next : node.belowOrEqual.next;
+      value > effectiveThreshold ? node.above.next : node.belowOrEqual.next;
     onConfirm(value, nextId);
   }
 
@@ -72,7 +82,13 @@ export function EVAScreen({ node, initialValue, onConfirm }: EVAScreenProps) {
       {node.subtitle && (
         <span className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">
           Échelle visuelle analogique{" "}
-          <GlossaryTerm termId="eva">(EVA)</GlossaryTerm> · seuil clé : 4/10
+          <GlossaryTerm termId="eva">(EVA)</GlossaryTerm> · seuil clé :{" "}
+          {effectiveThreshold}/10
+        </span>
+      )}
+      {thresholdNote && (
+        <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full border border-brand-pink/25 bg-brand-pink/[0.08] px-2.5 py-0.5 text-[10px] font-medium text-brand-pink">
+          {thresholdNote}
         </span>
       )}
       <h2 className="mt-2 text-2xl font-bold leading-tight text-white sm:text-3xl">

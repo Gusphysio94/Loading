@@ -6,9 +6,14 @@ import {
   RefreshIcon,
   AlertIcon,
   BarChartIcon,
+  ActivityIcon,
 } from "./icons";
 import { PatientContextCard } from "./PatientContextCard";
 import type { PatientContext } from "../types/patient";
+import {
+  mechanismLabels,
+  mechanismColors,
+} from "../types/painType";
 
 type ResumeProps = {
   treeTitle: string;
@@ -21,6 +26,7 @@ type ResumeProps = {
 type HomeProps = {
   onSelectTree: (treeId: string) => void;
   onOpenRedFlags: () => void;
+  onOpenPainType: () => void;
   onOpenStats: () => void;
   resume: ResumeProps | null;
   patientContext: PatientContext;
@@ -32,6 +38,7 @@ type HomeProps = {
 export function Home({
   onSelectTree,
   onOpenRedFlags,
+  onOpenPainType,
   onOpenStats,
   resume,
   patientContext,
@@ -39,6 +46,8 @@ export function Home({
   onPatientContextClear,
   evaluationCount,
 }: HomeProps) {
+  const painScore = patientContext.painScore;
+  const dominantMech = painScore?.dominant;
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-5 pb-12 pt-10 sm:pt-16">
       <motion.div
@@ -119,6 +128,49 @@ export function Home({
         onChange={onPatientContextChange}
         onClear={onPatientContextClear}
       />
+
+      <motion.button
+        type="button"
+        onClick={onOpenPainType}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.99 }}
+        className="group mt-3 flex items-center gap-3 rounded-2xl border border-brand-violet/25 bg-brand-violet/[0.05] px-4 py-3 text-left transition-colors hover:border-brand-violet/45 hover:bg-brand-violet/[0.08]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-violet/15 text-brand-violet">
+          <ActivityIcon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-violet/85">
+            Profil de douleur · IASP
+          </div>
+          {painScore ? (
+            <div className="text-sm font-semibold text-white">
+              {dominantMech ? (
+                <>
+                  Dominance{" "}
+                  <span style={{ color: mechanismColors[dominantMech] }}>
+                    {mechanismLabels[dominantMech].toLowerCase()}
+                  </span>
+                </>
+              ) : (
+                "Profil mixte"
+              )}
+              <span className="ml-2 text-[11px] font-normal text-white/45">
+                {painScore.nociceptive}% / {painScore.neuropathic}% /{" "}
+                {painScore.nociplastic}%
+              </span>
+            </div>
+          ) : (
+            <div className="text-sm font-semibold text-white">
+              Classifier la douleur en 9 questions
+            </div>
+          )}
+        </div>
+        <ChevronRightIcon className="h-4 w-4 shrink-0 text-brand-violet/60 transition-all group-hover:translate-x-0.5 group-hover:text-brand-violet" />
+      </motion.button>
 
       <motion.button
         type="button"

@@ -151,6 +151,15 @@ export function formatRecapAsText(args: {
         `Chronicité : ${chronicityLabels[args.patientContext.chronicity]}`,
       );
     }
+    const ps = args.patientContext.painScore;
+    if (ps) {
+      const profile = ps.dominant
+        ? `Dominance ${ps.dominant}`
+        : "profil mixte";
+      lines.push(
+        `Profil douleur : ${profile} (nociceptif ${ps.nociceptive}% · neuropathique ${ps.neuropathic}% · nociplastique ${ps.nociplastic}%)`,
+      );
+    }
   }
 
   for (const l of formatSessionInputsText(args.sessionInputs)) {

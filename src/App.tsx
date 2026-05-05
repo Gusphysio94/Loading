@@ -11,6 +11,9 @@ import { RedFlagsScreen } from "./components/RedFlagsScreen";
 import { StatsScreen } from "./components/StatsScreen";
 import { Onboarding } from "./components/Onboarding";
 import { SessionInputsScreen } from "./components/SessionInputsScreen";
+import { PainTypeScreener } from "./components/PainTypeScreener";
+import { scorePainAssessment } from "./types/painType";
+import type { PainAssessment } from "./types/painType";
 import { treesById } from "./data/trees";
 import { hasSeenOnboarding, markOnboardingSeen } from "./lib/onboarding";
 import { buildRecap } from "./lib/recap";
@@ -28,6 +31,7 @@ import {
   type HistoryEntry,
 } from "./lib/history";
 import type { PatientContext } from "./types/patient";
+import { evaThresholdFor, evaThresholdNote } from "./types/patient";
 import type { SessionInputs, PostSessionLoad } from "./types/session";
 import { loadAU } from "./types/session";
 
@@ -38,7 +42,7 @@ type TreeState = {
   sessionInputs: SessionInputs;
 };
 
-type Mode = "home" | "tree" | "treeInputs" | "redFlags" | "stats";
+type Mode = "home" | "tree" | "treeInputs" | "redFlags" | "stats" | "painType";
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("home");
@@ -138,6 +142,21 @@ export default function App() {
   const handleOpenRedFlags = useCallback(() => setMode("redFlags"), []);
   const handleCloseRedFlags = useCallback(() => setMode("home"), []);
   const handleOpenStats = useCallback(() => setMode("stats"), []);
+  const handleOpenPainType = useCallback(() => setMode("painType"), []);
+
+  const handleSavePainAssessment = useCallback(
+    (assessment: PainAssessment) => {
+      const score = scorePainAssessment(assessment.answers);
+      const next: PatientContext = {
+        ...patientContext,
+        painAssessment: assessment,
+        painScore: score,
+      };
+      setPatientContext(next);
+      savePatientContext(next);
+    },
+    [patientContext],
+  );
 
   const handleResume = useCallback(() => {
     if (!resumeAvailable) return;
@@ -286,9 +305,11 @@ export default function App() {
       ? "Drapeaux rouges"
       : mode === "stats"
         ? "Statistiques"
-        : mode === "treeInputs"
-          ? `${tree?.shortTitle ?? ""} · détails`
-          : tree?.shortTitle;
+        : mode === "painType"
+          ? "Profil de douleur"
+          : mode === "treeInputs"
+            ? `${tree?.shortTitle ?? ""} · détails`
+            : tree?.shortTitle;
 
   const headerProps = useMemo(
     () => ({
@@ -336,6 +357,13 @@ export default function App() {
         <AnimatePresence mode="wait">
           {mode === "redFlags" ? (
             <RedFlagsScreen key="redFlags" onBackHome={handleCloseRedFlags} />
+          ) : mode === "painType" ? (
+            <PainTypeScreener
+              key="painType"
+              initial={patientContext.painAssessment}
+              onSave={handleSavePainAssessment}
+              onBackHome={() => setMode("home")}
+            />
           ) : mode === "stats" ? (
             <StatsScreen
               key="stats"
@@ -347,6 +375,7 @@ export default function App() {
               key="home"
               onSelectTree={handleSelectTree}
               onOpenRedFlags={handleOpenRedFlags}
+              onOpenPainType={handleOpenPainType}
               onOpenStats={handleOpenStats}
               evaluationCount={history.length}
               patientContext={patientContext}
@@ -379,6 +408,8 @@ export default function App() {
               key={currentNode.id}
               node={currentNode}
               initialValue={state.evaValues[currentNode.id]}
+              thresholdOverride={evaThresholdFor(patientContext.chronicity)}
+              thresholdNote={evaThresholdNote(patientContext.chronicity)}
               onConfirm={handleEVAConfirm}
             />
           ) : currentNode.kind === "modulation" ? (
