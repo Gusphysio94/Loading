@@ -2,6 +2,7 @@ export type Chronicity = "aigu" | "subaigu" | "chronique";
 
 import type { PainAssessment, PainScore } from "./painType";
 import type { YellowFlagAssessment, YellowFlagScore } from "./yellowFlags";
+import type { TriageStatus } from "./triage";
 
 export type PatientContext = {
   initials?: string;
@@ -13,6 +14,8 @@ export type PatientContext = {
   painScore?: PainScore;
   yellowFlags?: YellowFlagAssessment;
   yellowFlagScore?: YellowFlagScore;
+  /** Last triage performed for the current patient (RF screening). */
+  triageStatus?: TriageStatus;
 };
 
 export const chronicityLabels: Record<Chronicity, string> = {

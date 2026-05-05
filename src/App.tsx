@@ -15,6 +15,12 @@ import { PainTypeScreener } from "./components/PainTypeScreener";
 import { scorePainAssessment } from "./types/painType";
 import type { PainAssessment } from "./types/painType";
 import { BodyMapScreen } from "./components/BodyMapScreen";
+import { RegionTriageScreen } from "./components/RegionTriageScreen";
+import { DeepAssessmentScreen } from "./components/DeepAssessmentScreen";
+import { moduleForZone, hasDeepModule } from "./data/deepAssessment";
+import type { DeepAssessmentAnswers } from "./types/deepAssessment";
+import { triageZonesForRegions } from "./types/bodyMap";
+import type { TriageStatus, TriageZone } from "./types/triage";
 import { YellowFlagsScreener } from "./components/YellowFlagsScreener";
 import { scoreYellowFlags } from "./types/yellowFlags";
 import type { YellowFlagAssessment } from "./types/yellowFlags";
@@ -54,6 +60,8 @@ type Mode =
   | "stats"
   | "painType"
   | "bodyMap"
+  | "triage"
+  | "deepAssessment"
   | "yellowFlags";
 
 export default function App() {
@@ -63,6 +71,8 @@ export default function App() {
   const [patientContext, setPatientContext] = useState<PatientContext>({});
   const [history, setHistoryState] = useState<HistoryEntry[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [triageZones, setTriageZones] = useState<TriageZone[]>([]);
+  const [deepAssessmentZone, setDeepAssessmentZone] = useState<TriageZone | null>(null);
   const initialLoad = useRef(true);
   const recordedRecoIds = useRef<Set<string>>(new Set());
 
@@ -184,6 +194,72 @@ export default function App() {
     },
     [patientContext],
   );
+
+  const handleSaveBodyZonesAndTriage = useCallback(
+    (zones: string[]) => {
+      const tz = triageZonesForRegions(zones);
+      const next: PatientContext = {
+        ...patientContext,
+        bodyZones: zones.length > 0 ? zones : undefined,
+      };
+      setPatientContext(next);
+      savePatientContext(next);
+      setTriageZones(tz);
+      setMode("triage");
+    },
+    [patientContext],
+  );
+
+  const handleTriageComplete = useCallback(
+    (status: TriageStatus) => {
+      const next: PatientContext = {
+        ...patientContext,
+        triageStatus: status,
+      };
+      setPatientContext(next);
+      savePatientContext(next);
+    },
+    [patientContext],
+  );
+
+  const handleClearTriage = useCallback(() => {
+    const next: PatientContext = {
+      ...patientContext,
+      triageStatus: undefined,
+    };
+    setPatientContext(next);
+    savePatientContext(next);
+  }, [patientContext]);
+
+  const handleOpenDeepAssessment = useCallback((zone: TriageZone) => {
+    if (!hasDeepModule(zone)) return;
+    setDeepAssessmentZone(zone);
+    setMode("deepAssessment");
+  }, []);
+
+  const handleDeepAssessmentComplete = useCallback(
+    (_answers: DeepAssessmentAnswers) => {
+      // Today the answers are kept inside the screen (results computed live).
+      // Hook reserved for future persistence (history of deep assessments).
+    },
+    [],
+  );
+
+  const handleAcknowledgeRedFlags = useCallback(() => {
+    const status: TriageStatus = {
+      date: new Date().toISOString(),
+      zones: [],
+      outcome: "clear",
+      flaggedIds: [],
+      hasCritical: false,
+    };
+    const next: PatientContext = {
+      ...patientContext,
+      triageStatus: status,
+    };
+    setPatientContext(next);
+    savePatientContext(next);
+  }, [patientContext]);
 
   const handleSavePainAssessment = useCallback(
     (assessment: PainAssessment) => {
@@ -349,12 +425,16 @@ export default function App() {
         : mode === "painType"
           ? "Profil de douleur"
           : mode === "bodyMap"
-            ? "Schéma corporel"
-            : mode === "yellowFlags"
-              ? "Drapeaux jaunes"
-              : mode === "treeInputs"
-              ? `${tree?.shortTitle ?? ""} · détails`
-              : tree?.shortTitle;
+            ? "Triage · localisation"
+            : mode === "triage"
+              ? "Triage · drapeaux rouges"
+              : mode === "deepAssessment"
+                ? "Évaluation approfondie"
+              : mode === "yellowFlags"
+                ? "Drapeaux jaunes"
+                : mode === "treeInputs"
+                  ? `${tree?.shortTitle ?? ""} · détails`
+                  : tree?.shortTitle;
 
   const headerProps = useMemo(
     () => ({
@@ -407,8 +487,34 @@ export default function App() {
               key="bodyMap"
               initial={patientContext.bodyZones}
               onSave={handleSaveBodyZones}
+              onSaveAndTriage={handleSaveBodyZonesAndTriage}
               onCancel={() => setMode("home")}
             />
+          ) : mode === "triage" ? (
+            <RegionTriageScreen
+              key="triage"
+              zones={triageZones}
+              initialFlagged={patientContext.triageStatus?.flaggedIds}
+              onComplete={handleTriageComplete}
+              onBackHome={() => setMode("home")}
+              onStartDeepAssessment={handleOpenDeepAssessment}
+            />
+          ) : mode === "deepAssessment" && deepAssessmentZone ? (
+            (() => {
+              const mod = moduleForZone(deepAssessmentZone);
+              if (!mod) {
+                setMode("home");
+                return null;
+              }
+              return (
+                <DeepAssessmentScreen
+                  key={`deep-${deepAssessmentZone}`}
+                  module={mod}
+                  onComplete={handleDeepAssessmentComplete}
+                  onExit={() => setMode("home")}
+                />
+              );
+            })()
           ) : mode === "yellowFlags" ? (
             <YellowFlagsScreener
               key="yellowFlags"
@@ -438,6 +544,9 @@ export default function App() {
               onOpenBodyMap={handleOpenBodyMap}
               onOpenYellowFlags={handleOpenYellowFlags}
               onOpenStats={handleOpenStats}
+              onAcknowledgeRedFlags={handleAcknowledgeRedFlags}
+              onClearTriage={handleClearTriage}
+              onOpenDeepAssessment={handleOpenDeepAssessment}
               evaluationCount={history.length}
               patientContext={patientContext}
               onPatientContextChange={handlePatientContextChange}
