@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { trees } from "../data/trees";
+import type { Tree } from "../types/tree";
 import {
   iconForTree,
   ChevronRightIcon,
@@ -135,6 +136,12 @@ export function Home({
         onOpenBodyMap={onOpenBodyMap}
       />
 
+      <SectionHeader
+        eyebrow="Profil patient"
+        title="Outils de qualification"
+        delay={0.18}
+      />
+
       <motion.button
         type="button"
         onClick={onOpenPainType}
@@ -240,40 +247,50 @@ export function Home({
         <ChevronRightIcon className="h-4 w-4 shrink-0 text-accent-danger/60 transition-all group-hover:translate-x-0.5 group-hover:text-accent-danger" />
       </motion.button>
 
-      <div className="mt-6 grid gap-4">
-        {trees.map((tree, index) => (
-          <motion.button
-            key={tree.id}
-            type="button"
-            onClick={() => onSelectTree(tree.id)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 + index * 0.08 }}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.985 }}
-            className="surface group relative flex items-center gap-5 overflow-hidden rounded-2xl px-5 py-5 text-left transition-colors hover:border-white/20 sm:px-6 sm:py-6"
-          >
-            <div className="gradient-bg absolute inset-x-0 top-0 h-px opacity-40" />
+      <SectionHeader
+        eyebrow="Évaluation"
+        title="Quelle est la situation ?"
+        delay={0.24}
+      />
 
-            <div className="gradient-bg relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-white shadow-lg shadow-brand-violet/20">
-              {iconForTree(tree.icon, { className: "h-7 w-7" })}
-            </div>
+      <PhaseSubHeader
+        label="Pendant ou juste après l'effort"
+        kicker="Le kiné est avec son patient"
+        delay={0.26}
+      />
 
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium uppercase tracking-wider text-white/40">
-                Situation {String(index + 1).padStart(2, "0")}
-              </div>
-              <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
-                {tree.title}
-              </h2>
-              <p className="mt-1 line-clamp-2 text-sm text-white/55">
-                {tree.description}
-              </p>
-            </div>
+      <div className="mt-3 grid gap-3">
+        {trees
+          .filter((t) => t.phase === "in-session")
+          .map((tree, index) => (
+            <TreeCard
+              key={tree.id}
+              tree={tree}
+              index={index}
+              delay={0.28 + index * 0.06}
+              onSelect={() => onSelectTree(tree.id)}
+            />
+          ))}
+      </div>
 
-            <ChevronRightIcon className="h-5 w-5 shrink-0 text-white/40 transition-all group-hover:translate-x-1 group-hover:text-white/80" />
-          </motion.button>
-        ))}
+      <PhaseSubHeader
+        label="Entre 2 séances"
+        kicker="Patient à distance · texte / appel"
+        delay={0.5}
+      />
+
+      <div className="mt-3 grid gap-3">
+        {trees
+          .filter((t) => t.phase === "between-sessions")
+          .map((tree, index) => (
+            <TreeCard
+              key={tree.id}
+              tree={tree}
+              index={index + 3}
+              delay={0.52 + index * 0.06}
+              onSelect={() => onSelectTree(tree.id)}
+            />
+          ))}
       </div>
 
       {evaluationCount > 0 && (
@@ -315,5 +332,105 @@ export function Home({
         clinique du praticien.
       </motion.div>
     </div>
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  delay = 0,
+}: {
+  eyebrow: string;
+  title: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, delay }}
+      className="mt-8 flex items-baseline gap-3"
+    >
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+      <div className="text-center">
+        <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/35">
+          {eyebrow}
+        </div>
+        <div className="mt-0.5 text-sm font-semibold text-white/85">
+          {title}
+        </div>
+      </div>
+      <div className="h-px flex-1 bg-gradient-to-l from-transparent via-white/15 to-transparent" />
+    </motion.div>
+  );
+}
+
+function PhaseSubHeader({
+  label,
+  kicker,
+  delay = 0,
+}: {
+  label: string;
+  kicker: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay }}
+      className="mt-5 flex items-center gap-2"
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-brand-pink" />
+      <span className="text-xs font-semibold uppercase tracking-[0.15em] text-white/75">
+        {label}
+      </span>
+      <span className="text-[11px] text-white/35">· {kicker}</span>
+    </motion.div>
+  );
+}
+
+function TreeCard({
+  tree,
+  index,
+  delay,
+  onSelect,
+}: {
+  tree: Tree;
+  index: number;
+  delay: number;
+  onSelect: () => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onSelect}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay }}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.985 }}
+      className="surface group relative flex items-center gap-5 overflow-hidden rounded-2xl px-5 py-5 text-left transition-colors hover:border-white/20 sm:px-6 sm:py-6"
+    >
+      <div className="gradient-bg absolute inset-x-0 top-0 h-px opacity-40" />
+
+      <div className="gradient-bg relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-white shadow-lg shadow-brand-violet/20">
+        {iconForTree(tree.icon, { className: "h-7 w-7" })}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-medium uppercase tracking-wider text-white/40">
+          Situation {String(index + 1).padStart(2, "0")}
+        </div>
+        <h2 className="mt-1 text-lg font-semibold text-white sm:text-xl">
+          {tree.title}
+        </h2>
+        <p className="mt-1 line-clamp-2 text-sm text-white/55">
+          {tree.description}
+        </p>
+      </div>
+
+      <ChevronRightIcon className="h-5 w-5 shrink-0 text-white/40 transition-all group-hover:translate-x-1 group-hover:text-white/80" />
+    </motion.button>
   );
 }

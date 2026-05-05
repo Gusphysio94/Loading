@@ -79,6 +79,13 @@ export type DecisionNode =
   | RecommendationNode
   | EVANode;
 
+/**
+ * "Moment de décision" du kiné — sert au regroupement visuel de la home.
+ * - in-session : pendant ou juste après une séance (le kiné est avec le patient)
+ * - between-sessions : entre deux RDV (patient à distance, texte/appel)
+ */
+export type DecisionPhase = "in-session" | "between-sessions";
+
 export type Tree = {
   id: string;
   title: string;
@@ -89,6 +96,8 @@ export type Tree = {
   nodes: Record<string, DecisionNode>;
   /** When set, the app shows an optional "Inputs séance" screen before the tree starts. */
   inputsSchema?: "exercise" | "running" | "sport";
+  /** Used to group the cards on the home screen by clinical decision moment. */
+  phase?: DecisionPhase;
 };
 
 export type RecapEntry = {

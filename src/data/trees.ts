@@ -87,6 +87,7 @@ export const exerciceTree: Tree = {
   icon: "dumbbell",
   startId: "q1",
   inputsSchema: "exercise",
+  phase: "in-session",
   nodes: {
     q1: {
       id: "q1",
@@ -221,6 +222,7 @@ export const courseTree: Tree = {
   icon: "running",
   startId: "q1",
   inputsSchema: "running",
+  phase: "in-session",
   nodes: {
     q1: {
       id: "q1",
@@ -389,6 +391,7 @@ export const sportTree: Tree = {
   icon: "trophy",
   startId: "q1",
   inputsSchema: "sport",
+  phase: "in-session",
   nodes: {
     q1: {
       id: "q1",
@@ -558,6 +561,7 @@ export const interSeanceTree: Tree = {
     "Le patient signale une douleur entre deux RDV (texte, appel, à distance).",
   icon: "messageSquare",
   startId: "q_signs",
+  phase: "between-sessions",
   nodes: {
     q_signs: {
       id: "q_signs",
