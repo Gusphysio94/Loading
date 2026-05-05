@@ -1,6 +1,7 @@
 import type { BehaviorAdvice, RecapEntry, Tree } from "../types/tree";
 import type { PatientContext } from "../types/patient";
 import { chronicityLabels, hasContext } from "../types/patient";
+import { joinedLabels } from "../types/bodyMap";
 import type { SessionInputs } from "../types/session";
 import { hasAnyInput, formatPace, loadAU, zoneFromAU, zoneLabels } from "../types/session";
 
@@ -145,6 +146,12 @@ export function formatRecapAsText(args: {
     }
     if (args.patientContext.location) {
       lines.push(`Localisation : ${args.patientContext.location}`);
+    }
+    if (
+      args.patientContext.bodyZones &&
+      args.patientContext.bodyZones.length > 0
+    ) {
+      lines.push(`Zones : ${joinedLabels(args.patientContext.bodyZones)}`);
     }
     if (args.patientContext.chronicity) {
       lines.push(

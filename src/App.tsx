@@ -14,6 +14,7 @@ import { SessionInputsScreen } from "./components/SessionInputsScreen";
 import { PainTypeScreener } from "./components/PainTypeScreener";
 import { scorePainAssessment } from "./types/painType";
 import type { PainAssessment } from "./types/painType";
+import { BodyMapScreen } from "./components/BodyMapScreen";
 import { treesById } from "./data/trees";
 import { hasSeenOnboarding, markOnboardingSeen } from "./lib/onboarding";
 import { buildRecap } from "./lib/recap";
@@ -42,7 +43,14 @@ type TreeState = {
   sessionInputs: SessionInputs;
 };
 
-type Mode = "home" | "tree" | "treeInputs" | "redFlags" | "stats" | "painType";
+type Mode =
+  | "home"
+  | "tree"
+  | "treeInputs"
+  | "redFlags"
+  | "stats"
+  | "painType"
+  | "bodyMap";
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("home");
@@ -143,6 +151,20 @@ export default function App() {
   const handleCloseRedFlags = useCallback(() => setMode("home"), []);
   const handleOpenStats = useCallback(() => setMode("stats"), []);
   const handleOpenPainType = useCallback(() => setMode("painType"), []);
+  const handleOpenBodyMap = useCallback(() => setMode("bodyMap"), []);
+
+  const handleSaveBodyZones = useCallback(
+    (zones: string[]) => {
+      const next: PatientContext = {
+        ...patientContext,
+        bodyZones: zones.length > 0 ? zones : undefined,
+      };
+      setPatientContext(next);
+      savePatientContext(next);
+      setMode("home");
+    },
+    [patientContext],
+  );
 
   const handleSavePainAssessment = useCallback(
     (assessment: PainAssessment) => {
@@ -307,9 +329,11 @@ export default function App() {
         ? "Statistiques"
         : mode === "painType"
           ? "Profil de douleur"
-          : mode === "treeInputs"
-            ? `${tree?.shortTitle ?? ""} · détails`
-            : tree?.shortTitle;
+          : mode === "bodyMap"
+            ? "Schéma corporel"
+            : mode === "treeInputs"
+              ? `${tree?.shortTitle ?? ""} · détails`
+              : tree?.shortTitle;
 
   const headerProps = useMemo(
     () => ({
@@ -357,6 +381,13 @@ export default function App() {
         <AnimatePresence mode="wait">
           {mode === "redFlags" ? (
             <RedFlagsScreen key="redFlags" onBackHome={handleCloseRedFlags} />
+          ) : mode === "bodyMap" ? (
+            <BodyMapScreen
+              key="bodyMap"
+              initial={patientContext.bodyZones}
+              onSave={handleSaveBodyZones}
+              onCancel={() => setMode("home")}
+            />
           ) : mode === "painType" ? (
             <PainTypeScreener
               key="painType"
@@ -376,6 +407,7 @@ export default function App() {
               onSelectTree={handleSelectTree}
               onOpenRedFlags={handleOpenRedFlags}
               onOpenPainType={handleOpenPainType}
+              onOpenBodyMap={handleOpenBodyMap}
               onOpenStats={handleOpenStats}
               evaluationCount={history.length}
               patientContext={patientContext}

@@ -5,6 +5,8 @@ import type { PainAssessment, PainScore } from "./painType";
 export type PatientContext = {
   initials?: string;
   location?: string;
+  /** Body map zones — region ids from `bodyRegions`. */
+  bodyZones?: string[];
   chronicity?: Chronicity;
   painAssessment?: PainAssessment;
   painScore?: PainScore;
@@ -24,7 +26,12 @@ export const chronicityShort: Record<Chronicity, string> = {
 
 export function hasContext(ctx: PatientContext | null | undefined): boolean {
   if (!ctx) return false;
-  return !!(ctx.initials || ctx.location || ctx.chronicity);
+  return !!(
+    ctx.initials ||
+    ctx.location ||
+    (ctx.bodyZones && ctx.bodyZones.length > 0) ||
+    ctx.chronicity
+  );
 }
 
 /**

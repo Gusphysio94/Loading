@@ -27,6 +27,7 @@ type HomeProps = {
   onSelectTree: (treeId: string) => void;
   onOpenRedFlags: () => void;
   onOpenPainType: () => void;
+  onOpenBodyMap: () => void;
   onOpenStats: () => void;
   resume: ResumeProps | null;
   patientContext: PatientContext;
@@ -39,6 +40,7 @@ export function Home({
   onSelectTree,
   onOpenRedFlags,
   onOpenPainType,
+  onOpenBodyMap,
   onOpenStats,
   resume,
   patientContext,
@@ -127,6 +129,7 @@ export function Home({
         context={patientContext}
         onChange={onPatientContextChange}
         onClear={onPatientContextClear}
+        onOpenBodyMap={onOpenBodyMap}
       />
 
       <motion.button
