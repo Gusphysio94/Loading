@@ -167,6 +167,14 @@ export function formatRecapAsText(args: {
         `Profil douleur : ${profile} (nociceptif ${ps.nociceptive}% · neuropathique ${ps.neuropathic}% · nociplastique ${ps.nociplastic}%)`,
       );
     }
+    const yf = args.patientContext.yellowFlagScore;
+    if (yf && yf.answeredCount > 0) {
+      const tskTag = yf.tskHigh ? " (élevé)" : "";
+      const pcsTag = yf.pcsHigh ? " (élevé)" : "";
+      lines.push(
+        `Drapeaux jaunes : TSK-7 ${yf.tskScore}/28${tskTag} · PCS-4 ${yf.pcsScore}/16${pcsTag}`,
+      );
+    }
   }
 
   for (const l of formatSessionInputsText(args.sessionInputs)) {

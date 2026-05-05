@@ -15,6 +15,9 @@ import { PainTypeScreener } from "./components/PainTypeScreener";
 import { scorePainAssessment } from "./types/painType";
 import type { PainAssessment } from "./types/painType";
 import { BodyMapScreen } from "./components/BodyMapScreen";
+import { YellowFlagsScreener } from "./components/YellowFlagsScreener";
+import { scoreYellowFlags } from "./types/yellowFlags";
+import type { YellowFlagAssessment } from "./types/yellowFlags";
 import { treesById } from "./data/trees";
 import { hasSeenOnboarding, markOnboardingSeen } from "./lib/onboarding";
 import { buildRecap } from "./lib/recap";
@@ -50,7 +53,8 @@ type Mode =
   | "redFlags"
   | "stats"
   | "painType"
-  | "bodyMap";
+  | "bodyMap"
+  | "yellowFlags";
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("home");
@@ -152,6 +156,21 @@ export default function App() {
   const handleOpenStats = useCallback(() => setMode("stats"), []);
   const handleOpenPainType = useCallback(() => setMode("painType"), []);
   const handleOpenBodyMap = useCallback(() => setMode("bodyMap"), []);
+  const handleOpenYellowFlags = useCallback(() => setMode("yellowFlags"), []);
+
+  const handleSaveYellowFlags = useCallback(
+    (assessment: YellowFlagAssessment) => {
+      const score = scoreYellowFlags(assessment.answers);
+      const next: PatientContext = {
+        ...patientContext,
+        yellowFlags: assessment,
+        yellowFlagScore: score,
+      };
+      setPatientContext(next);
+      savePatientContext(next);
+    },
+    [patientContext],
+  );
 
   const handleSaveBodyZones = useCallback(
     (zones: string[]) => {
@@ -331,7 +350,9 @@ export default function App() {
           ? "Profil de douleur"
           : mode === "bodyMap"
             ? "Schéma corporel"
-            : mode === "treeInputs"
+            : mode === "yellowFlags"
+              ? "Drapeaux jaunes"
+              : mode === "treeInputs"
               ? `${tree?.shortTitle ?? ""} · détails`
               : tree?.shortTitle;
 
@@ -388,6 +409,13 @@ export default function App() {
               onSave={handleSaveBodyZones}
               onCancel={() => setMode("home")}
             />
+          ) : mode === "yellowFlags" ? (
+            <YellowFlagsScreener
+              key="yellowFlags"
+              initial={patientContext.yellowFlags}
+              onSave={handleSaveYellowFlags}
+              onBackHome={() => setMode("home")}
+            />
           ) : mode === "painType" ? (
             <PainTypeScreener
               key="painType"
@@ -408,6 +436,7 @@ export default function App() {
               onOpenRedFlags={handleOpenRedFlags}
               onOpenPainType={handleOpenPainType}
               onOpenBodyMap={handleOpenBodyMap}
+              onOpenYellowFlags={handleOpenYellowFlags}
               onOpenStats={handleOpenStats}
               evaluationCount={history.length}
               patientContext={patientContext}

@@ -1,6 +1,7 @@
 export type Chronicity = "aigu" | "subaigu" | "chronique";
 
 import type { PainAssessment, PainScore } from "./painType";
+import type { YellowFlagAssessment, YellowFlagScore } from "./yellowFlags";
 
 export type PatientContext = {
   initials?: string;
@@ -10,6 +11,8 @@ export type PatientContext = {
   chronicity?: Chronicity;
   painAssessment?: PainAssessment;
   painScore?: PainScore;
+  yellowFlags?: YellowFlagAssessment;
+  yellowFlagScore?: YellowFlagScore;
 };
 
 export const chronicityLabels: Record<Chronicity, string> = {

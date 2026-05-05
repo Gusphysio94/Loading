@@ -28,6 +28,7 @@ type HomeProps = {
   onOpenRedFlags: () => void;
   onOpenPainType: () => void;
   onOpenBodyMap: () => void;
+  onOpenYellowFlags: () => void;
   onOpenStats: () => void;
   resume: ResumeProps | null;
   patientContext: PatientContext;
@@ -41,6 +42,7 @@ export function Home({
   onOpenRedFlags,
   onOpenPainType,
   onOpenBodyMap,
+  onOpenYellowFlags,
   onOpenStats,
   resume,
   patientContext,
@@ -50,6 +52,7 @@ export function Home({
 }: HomeProps) {
   const painScore = patientContext.painScore;
   const dominantMech = painScore?.dominant;
+  const yfScore = patientContext.yellowFlagScore;
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-5 pb-12 pt-10 sm:pt-16">
       <motion.div
@@ -173,6 +176,44 @@ export function Home({
           )}
         </div>
         <ChevronRightIcon className="h-4 w-4 shrink-0 text-brand-violet/60 transition-all group-hover:translate-x-0.5 group-hover:text-brand-violet" />
+      </motion.button>
+
+      <motion.button
+        type="button"
+        onClick={onOpenYellowFlags}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.21 }}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.99 }}
+        className="group mt-3 flex items-center gap-3 rounded-2xl border border-accent-warning/25 bg-accent-warning/[0.05] px-4 py-3 text-left transition-colors hover:border-accent-warning/45 hover:bg-accent-warning/[0.08]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-warning/15 text-accent-warning">
+          <AlertIcon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-warning/85">
+            Drapeaux jaunes · TSK + PCS
+          </div>
+          {yfScore && yfScore.answeredCount > 0 ? (
+            <div className="text-sm font-semibold text-white">
+              TSK {yfScore.tskScore}/28
+              {yfScore.tskHigh && (
+                <span className="ml-1 text-accent-warning">↑</span>
+              )}
+              <span className="mx-1 text-white/30">·</span>
+              PCS {yfScore.pcsScore}/16
+              {yfScore.pcsHigh && (
+                <span className="ml-1 text-accent-warning">↑</span>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm font-semibold text-white">
+              Kinésiophobie & catastrophisme — 11 questions
+            </div>
+          )}
+        </div>
+        <ChevronRightIcon className="h-4 w-4 shrink-0 text-accent-warning/60 transition-all group-hover:translate-x-0.5 group-hover:text-accent-warning" />
       </motion.button>
 
       <motion.button
